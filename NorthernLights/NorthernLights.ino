@@ -1,34 +1,51 @@
 #include <avr/io.h>         /* Defines pins, ports, etc */
 // See pinout at https://docs.arduino.cc/hardware/micro
 
-#define LED1 4
-#define LED2 5
-#define LED3 6
-#define BUTTON1 8
-#define BUTTON2 9
+#define LED0 4
+#define LED1 5
+#define LED2 6
+#define BUTTON0 7
+#define BUTTON1 2
+#define BUTTON2 3 
 
-ISR(PCINT0_vect){
+void onoff_interrupt(void){
+  // This will turn system on/off
+  // For now, toggle light
+  digitalWrite(LED0, digitalRead(BUTTON0));
+}
+
+void color_interrupt(void){
+  // This will change color mode
+  // For now, toggle light
   digitalWrite(LED1, digitalRead(BUTTON1));
+}
+
+void mode_interrupt(void){
+  // This will change mode
+  // for now, toggle light
   digitalWrite(LED2, digitalRead(BUTTON2));
 }
 
 void setup() {
   // Pin directions
+  pinMode(LED0, OUTPUT);
   pinMode(LED1, OUTPUT);
   pinMode(LED2, OUTPUT);
-  pinMode(LED3, OUTPUT);
-  pinMode(BUTTON1, INPUT_PULLUP); // Use pullup - less wiring
+  pinMode(BUTTON0, INPUT_PULLUP); // Use pullup - less wiring
+  pinMode(BUTTON1, INPUT_PULLUP);
   pinMode(BUTTON2, INPUT_PULLUP);
 
-  PCICR |= (1 << PCIE0);
-  PCMSK0 |= ((1 << PCINT4) | (1 << PCINT5));
-  sei();
+  // Set up interrupts
+  attachInterrupt(digitalPinToInterrupt(BUTTON0), onoff_interrupt, CHANGE);
+  attachInterrupt(digitalPinToInterrupt(BUTTON1), color_interrupt, CHANGE);
+  attachInterrupt(digitalPinToInterrupt(BUTTON2), mode_interrupt, CHANGE);
+
+  // Initialize the lights. Otherwise they start in random state
+  digitalWrite(LED0, HIGH);
+  digitalWrite(LED1, HIGH);
+  digitalWrite(LED2, HIGH);
 }
 
 void loop() {
   // put your main code here, to run repeatedly:
-  digitalWrite(LED3, HIGH);
-  delay(500);
-  digitalWrite(LED3, LOW);
-  delay(500);
 }
