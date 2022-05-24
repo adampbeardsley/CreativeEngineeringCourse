@@ -7,7 +7,6 @@
 #define LED2 7
 #define LEDS 9  // LEDs on pin 9
 #define NUMPIXELS 50
-#define BUTTON0 7  // on/off button
 #define BUTTON1 2  // color button
 #define BUTTON2 3  // pattern button
 #define DEBOUNCE_TIME 5
@@ -33,14 +32,6 @@ uint8_t debouncePress(int button){
   return 0;
 }
 
-void onoff_interrupt(void){
-  // This will turn system on/off
-  // For now, toggle light
-  if (debouncePress(BUTTON0)){
-    digitalWrite(LED0, !digitalRead(LED0));
-  }
-}
-
 void color_interrupt(void){
   // This will change color mode
   // For now, toggle light
@@ -63,12 +54,10 @@ void setup() {
   pinMode(LED0, OUTPUT);
   pinMode(LED1, OUTPUT);
   pinMode(LED2, OUTPUT);
-  pinMode(BUTTON0, INPUT_PULLUP); // Use pullup - less wiring
-  pinMode(BUTTON1, INPUT_PULLUP);
+  pinMode(BUTTON1, INPUT_PULLUP); // Use pullup - less wiring
   pinMode(BUTTON2, INPUT_PULLUP);
 
   // Set up interrupts
-  attachInterrupt(digitalPinToInterrupt(BUTTON0), onoff_interrupt, FALLING);
   attachInterrupt(digitalPinToInterrupt(BUTTON1), color_interrupt, FALLING);
   attachInterrupt(digitalPinToInterrupt(BUTTON2), mode_interrupt, FALLING);
 
