@@ -1,17 +1,27 @@
 #include <avr/io.h>         /* Defines pins, ports, etc */
 // See pinout at https://docs.arduino.cc/hardware/micro
+#include <Adafruit_NeoPixel.h>
 
-#define LED0 4
-#define LED1 5
-#define LED2 6
-#define BUTTON0 7
-#define BUTTON1 2
-#define BUTTON2 3
+#define LED0 5
+#define LED1 6
+#define LED2 7
+#define LEDS 9  // LEDs on pin 9
+#define NUMPIXELS 50
+#define BUTTON0 7  // on/off button
+#define BUTTON1 2  // color button
+#define BUTTON2 3  // pattern button
 #define DEBOUNCE_TIME 5
+#define NCOLOR_MODES 3
 
-uint8_t buttonPressed0 = 0;
-uint8_t buttonPressed1 = 0;
-uint8_t buttonPressed2 = 0;
+Adafruit_NeoPixel pixels(NUMPIXELS, LEDS, NEO_GRB + NEO_KHZ800);
+
+uint8_t color_mode = 0;  // White, RG, N. Lights
+uint8_t pattern = 0;  // Solid, Fading, (Music)
+int colors[NCOLOR_MODES][2][3] = {
+  {{255, 255, 255}, {255, 255, 255}}, // White
+  {{255, 0, 0}, {0, 255, 0}}, // Green/Red
+  {{255, 0, 0}, {255, 0, 255}} // Green/Yellow
+};
 
 uint8_t debouncePress(int button){
   if (!digitalRead(button)) {
@@ -35,7 +45,8 @@ void color_interrupt(void){
   // This will change color mode
   // For now, toggle light
   if (debouncePress(BUTTON1)){
-    digitalWrite(LED1, !digitalRead(LED1));
+    // Update color
+    color_mode = (color_mode + 1) % NCOLOR_MODES;
   }
 }
 
@@ -65,8 +76,17 @@ void setup() {
   digitalWrite(LED0, HIGH);
   digitalWrite(LED1, HIGH);
   digitalWrite(LED2, HIGH);
+
+  pixels.begin();
 }
 
 void loop() {
   // put your main code here, to run repeatedly:
+  for (int i=0; i<NUMPIXELS; i++){
+    int j = i % 2;
+    pixels.setPixelColor(i, pixels.Color(colors[color_mode][j][0],
+                                         colors[color_mode][j][1],
+                                         colors[color_mode][j][2]));
+  }
+  pixels.show();
 }
