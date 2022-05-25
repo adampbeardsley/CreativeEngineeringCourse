@@ -71,11 +71,13 @@ void setup() {
 
 void loop() {
   // put your main code here, to run repeatedly:
+  pixels.clear();
   for (int i=0; i<NUMPIXELS; i++){
     int j = i % 2;
     pixels.setPixelColor(i, pixels.Color(colors[color_mode][j][0],
                                          colors[color_mode][j][1],
                                          colors[color_mode][j][2]));
+    delay(20);
+    pixels.show();
   }
-  pixels.show();
 }
