@@ -7,10 +7,13 @@
 #define LED2 7
 #define LEDS 9  // LEDs on pin 9
 #define NUMPIXELS 50
+#define NPIX_USE 7  // number of pixels to light up
 #define BUTTON1 2  // color button
 #define BUTTON2 3  // pattern button
 #define DEBOUNCE_TIME 5
 #define NCOLOR_MODES 3
+#define NPATTERNS 2
+#define FADE_PERIOD 5000  // ms for fading cycle
 
 Adafruit_NeoPixel pixels(NUMPIXELS, LEDS, NEO_GRB + NEO_KHZ800);
 
@@ -19,7 +22,7 @@ uint8_t pattern = 0;  // Solid, Fading, (Music)
 int colors[NCOLOR_MODES][2][3] = {
   {{255, 255, 255}, {255, 255, 255}}, // White
   {{255, 0, 0}, {0, 255, 0}}, // Green/Red
-  {{255, 0, 0}, {255, 0, 255}} // Green/Yellow
+  {{0, 255, 255}, {255, 255, 0}} // Green/Yellow
 };
 
 uint8_t debouncePress(int button){
@@ -33,19 +36,16 @@ uint8_t debouncePress(int button){
 }
 
 void color_interrupt(void){
-  // This will change color mode
-  // For now, toggle light
   if (debouncePress(BUTTON1)){
     // Update color
     color_mode = (color_mode + 1) % NCOLOR_MODES;
   }
 }
 
-void mode_interrupt(void){
-  // This will change mode
-  // for now, toggle light
+void pattern_interrupt(void){
   if (debouncePress(BUTTON2)){
-    digitalWrite(LED2, !digitalRead(LED2));
+    // Update pattern
+    pattern = (pattern + 1) % NPATTERNS;
   }
 }
 
@@ -59,7 +59,7 @@ void setup() {
 
   // Set up interrupts
   attachInterrupt(digitalPinToInterrupt(BUTTON1), color_interrupt, FALLING);
-  attachInterrupt(digitalPinToInterrupt(BUTTON2), mode_interrupt, FALLING);
+  attachInterrupt(digitalPinToInterrupt(BUTTON2), pattern_interrupt, FALLING);
 
   // Initialize the lights. Otherwise they start in random state
   digitalWrite(LED0, HIGH);
@@ -71,13 +71,29 @@ void setup() {
 
 void loop() {
   // put your main code here, to run repeatedly:
-  pixels.clear();
-  for (int i=0; i<NUMPIXELS; i++){
-    int j = i % 2;
-    pixels.setPixelColor(i, pixels.Color(colors[color_mode][j][0],
-                                         colors[color_mode][j][1],
-                                         colors[color_mode][j][2]));
-    delay(20);
-    pixels.show();
+  switch (pattern) {
+    case 0:
+      // Solid color, every other light
+      for (int i=0; i<NPIX_USE; i++){
+        int j = i % 2;
+        pixels.setPixelColor(i, pixels.Color(colors[color_mode][j][0],
+                                             colors[color_mode][j][1],
+                                             colors[color_mode][j][2]));
+        //delay(20);
+        pixels.show();
+      }
+      break;
+    case 1:
+      // Fade between colors
+      float dist = (sin(TWO_PI * millis() / FADE_PERIOD) + 1) / 2;
+      float C0 = (dist * colors[color_mode][0][0]
+                + (1 - dist) * colors[color_mode][1][0]);
+      float C1 = (dist * colors[color_mode][0][1]
+                + (1 - dist) * colors[color_mode][1][1]);
+      float C2 = (dist * colors[color_mode][0][2]
+                + (1 - dist) * colors[color_mode][1][2]);
+      pixels.fill(pixels.Color(C0, C1, C2));
+      pixels.show();
+        
   }
 }
