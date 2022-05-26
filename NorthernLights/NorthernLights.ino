@@ -19,10 +19,10 @@ Adafruit_NeoPixel pixels(NUMPIXELS, LEDS, NEO_GRB + NEO_KHZ800);
 
 uint8_t color_mode = 0;  // White, RG, N. Lights
 uint8_t pattern = 0;  // Solid, Fading, (Music)
-int colors[NCOLOR_MODES][2][3] = {
-  {{255, 255, 255}, {255, 255, 255}}, // White
-  {{255, 0, 0}, {0, 255, 0}}, // Green/Red
-  {{0, 255, 255}, {255, 255, 0}} // Green/Yellow
+int colors[NCOLOR_MODES][3][3] = {
+  {{255, 255, 255}, {255, 255, 255}, {255, 255, 255}}, // White
+  {{255, 0, 0}, {0, 255, 0}, {255, 0, 0}}, // Green/Red
+  {{255, 255, 0}, {255, 125, 0}, {0, 255, 255}} // Green/Yellow
 };
 
 uint8_t debouncePress(int button){
@@ -75,7 +75,7 @@ void loop() {
     case 0:
       // Solid color, every other light
       for (int i=0; i<NPIX_USE; i++){
-        int j = i % 2;
+        int j = i % 3;
         pixels.setPixelColor(i, pixels.Color(colors[color_mode][j][0],
                                              colors[color_mode][j][1],
                                              colors[color_mode][j][2]));
