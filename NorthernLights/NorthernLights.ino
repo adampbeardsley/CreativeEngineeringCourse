@@ -19,6 +19,10 @@ Adafruit_NeoPixel pixels(NUMPIXELS, LEDS, NEO_GRB + NEO_KHZ800);
 
 uint8_t color_mode = 0;  // White, RG, N. Lights
 uint8_t pattern = 0;  // Solid, Fading, (Music)
+uint8_t pick_new = 1;  // pick new freq, etc for pattern
+float amp0;
+float freq0;
+float phase0;
 int colors[NCOLOR_MODES][3][3] = {
   {{255, 255, 255}, {255, 255, 255}, {255, 255, 255}}, // White
   {{255, 0, 0}, {0, 255, 0}, {255, 0, 0}}, // Green/Red
@@ -49,12 +53,15 @@ void pattern_interrupt(void){
   }
 }
 
-float color_mix(float x, int i){
-  float k1 = (colors[color_mode][2][i] - colors[color_mode][0][i]) / 2;
-  float k2 = (colors[color_mode][0][i] + colors[color_mode][2][i]) / 2 - colors[color_mode][1][i];
-  float k4 = colors[color_mode][1][i];
-
-  return k1 * x * x * x + k2 * x * x + k4;
+uint32_t color_mix(float x){
+  float val[3];
+  for (int i=0; i<3; i++){
+    float k1 = (colors[color_mode][2][i] - colors[color_mode][0][i]) / 2;
+    float k2 = (colors[color_mode][0][i] + colors[color_mode][2][i]) / 2 - colors[color_mode][1][i];
+    float k4 = colors[color_mode][1][i];
+    val[i] = k1 * x * x * x + k2 * x * x + k4;
+  }
+  return pixels.Color(val[0], val[1], val[2]);
 }
 
 void setup() {
@@ -75,6 +82,9 @@ void setup() {
   digitalWrite(LED2, HIGH);
 
   pixels.begin();
+
+  Serial.begin(9600);  
+  randomSeed(analogRead(0));
 }
 
 void loop() {
@@ -93,8 +103,20 @@ void loop() {
       break;
     case 1:
       // Fade between colors
-      float dist = (millis() % 6000) / 3000.0 - 1;
-      pixels.fill(pixels.Color(color_mix(dist, 0), color_mix(dist, 1), color_mix(dist, 2)));
+      if (pick_new){
+        amp0 = random(0, 100 * NPIX_USE) / 200.0;
+        freq0 = float(random(0, 100 * TWO_PI)) / 100000.0;
+        phase0 = random(0, 100 * TWO_PI) / 100.0;
+        pick_new = 0;
+        Serial.println(amp0);
+        Serial.println(freq0 * 1000);
+        Serial.println(phase0);
+      }
+      float loc0 = amp0 * sin(freq0 * millis() + phase0) + NPIX_USE / 2;
+      for (int i=0; i<NPIX_USE; i++){
+        float x = 1.0 / (abs(i - loc0) / 2.0 + 1);
+        pixels.setPixelColor(i, color_mix(x));
+      }
       pixels.show();
         
   }
