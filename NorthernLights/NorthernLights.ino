@@ -49,6 +49,14 @@ void pattern_interrupt(void){
   }
 }
 
+float color_mix(float x, int i){
+  float k1 = (colors[color_mode][2][i] - colors[color_mode][0][i]) / 2;
+  float k2 = (colors[color_mode][0][i] + colors[color_mode][2][i]) / 2 - colors[color_mode][1][i];
+  float k4 = colors[color_mode][1][i];
+
+  return k1 * x * x * x + k2 * x * x + k4;
+}
+
 void setup() {
   // Pin directions
   pinMode(LED0, OUTPUT);
@@ -85,14 +93,8 @@ void loop() {
       break;
     case 1:
       // Fade between colors
-      float dist = (sin(TWO_PI * millis() / FADE_PERIOD) + 1) / 2;
-      float C0 = (dist * colors[color_mode][0][0]
-                + (1 - dist) * colors[color_mode][1][0]);
-      float C1 = (dist * colors[color_mode][0][1]
-                + (1 - dist) * colors[color_mode][1][1]);
-      float C2 = (dist * colors[color_mode][0][2]
-                + (1 - dist) * colors[color_mode][1][2]);
-      pixels.fill(pixels.Color(C0, C1, C2));
+      float dist = (millis() % 6000) / 3000.0 - 1;
+      pixels.fill(pixels.Color(color_mix(dist, 0), color_mix(dist, 1), color_mix(dist, 2)));
       pixels.show();
         
   }
