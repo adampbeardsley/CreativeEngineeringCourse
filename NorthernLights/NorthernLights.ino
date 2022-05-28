@@ -11,22 +11,23 @@
 #define BUTTON1 2  // color button
 #define BUTTON2 3  // pattern button
 #define DEBOUNCE_TIME 5
-#define NCOLOR_MODES 3
+#define NCOLOR_MODES 4
 #define NPATTERNS 2
 #define FADE_PERIOD 5000  // ms for fading cycle
 
 Adafruit_NeoPixel pixels(NUMPIXELS, LEDS, NEO_GRB + NEO_KHZ800);
 
-uint8_t color_mode = 0;  // White, RG, N. Lights
-uint8_t pattern = 0;  // Solid, Fading, (Music)
+uint8_t color_mode = 2;  // White, RG, N. Lights
+uint8_t pattern = 1;  // Solid, Fading, (Music)
 uint8_t pick_new = 1;  // pick new freq, etc for pattern
-float amp0;
-float freq0;
-float phase0;
+float amp[3];
+float freq[3];
+float phase[3];
 int colors[NCOLOR_MODES][3][3] = {
   {{255, 255, 255}, {255, 255, 255}, {255, 255, 255}}, // White
   {{255, 0, 0}, {0, 255, 0}, {255, 0, 0}}, // Green/Red
-  {{255, 255, 0}, {255, 125, 0}, {0, 255, 255}} // Green/Yellow
+  {{255, 255, 0}, {255, 100, 0}, {100, 0, 255}}, // J's Northern lights
+  {{255, 255, 0}, {255, 125, 0}, {0, 255, 255}} // A's Northern lights
 };
 
 uint8_t debouncePress(int button){
@@ -82,8 +83,6 @@ void setup() {
   digitalWrite(LED2, HIGH);
 
   pixels.begin();
-
-  Serial.begin(9600);  
   randomSeed(analogRead(0));
 }
 
@@ -104,17 +103,23 @@ void loop() {
     case 1:
       // Fade between colors
       if (pick_new){
-        amp0 = random(0, 100 * NPIX_USE) / 200.0;
-        freq0 = float(random(0, 100 * TWO_PI)) / 100000.0;
-        phase0 = random(0, 100 * TWO_PI) / 100.0;
+        for (int i=0; i<3; i++){
+          amp[i] = random(25 * NPIX_USE, 50 * NPIX_USE) / 200.0;
+          freq[i] = float(random(20 * TWO_PI, 100 * TWO_PI)) / 100000.0;
+          phase[i] = random(0, 100 * TWO_PI) / 100.0;
+        }
+//        amp0 = NPIX_USE / 2.0;
+//        freq0 = PI / 4000.0;
+//        phase0 = 0;
         pick_new = 0;
-        Serial.println(amp0);
-        Serial.println(freq0 * 1000);
-        Serial.println(phase0);
       }
-      float loc0 = amp0 * sin(freq0 * millis() + phase0) + NPIX_USE / 2;
+      float loc = 0;
+      unsigned long myTime = millis();
+      for (int i=0; i<3; i++){
+        loc += amp[i] * sin(freq[i] * myTime + phase[i]) + NPIX_USE / 2;
+      }
       for (int i=0; i<NPIX_USE; i++){
-        float x = 1.0 / (abs(i - loc0) / 2.0 + 1);
+        float x = 1.0 / (abs(i - loc) / 3.0 + 1);
         pixels.setPixelColor(i, color_mix(x));
       }
       pixels.show();
