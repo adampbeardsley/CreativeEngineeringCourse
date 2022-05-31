@@ -7,7 +7,7 @@
 #define LED2 7
 #define LEDS 9  // LEDs on pin 9
 #define NUMPIXELS 50
-#define NPIX_USE 7  // number of pixels to light up
+#define NPIX_USE 35  // number of pixels to light up
 #define BUTTON1 2  // color button
 #define BUTTON2 3  // pattern button
 #define DEBOUNCE_TIME 5
@@ -105,7 +105,7 @@ void loop() {
       if (pick_new){
         for (int i=0; i<3; i++){
           amp[i] = random(25 * NPIX_USE, 50 * NPIX_USE) / 200.0;
-          freq[i] = float(random(20 * TWO_PI, 100 * TWO_PI)) / 100000.0;
+          freq[i] = float(random(TWO_PI, 5 * TWO_PI)) / 100000.0;
           phase[i] = random(0, 100 * TWO_PI) / 100.0;
         }
 //        amp0 = NPIX_USE / 2.0;
@@ -113,13 +113,13 @@ void loop() {
 //        phase0 = 0;
         pick_new = 0;
       }
-      float loc = 0;
+      float loc = NPIX_USE / 2;
       unsigned long myTime = millis();
       for (int i=0; i<3; i++){
-        loc += amp[i] * sin(freq[i] * myTime + phase[i]) + NPIX_USE / 2;
+        loc += amp[i] * sin(freq[i] * myTime + phase[i]);
       }
       for (int i=0; i<NPIX_USE; i++){
-        float x = 1.0 / (abs(i - loc) / 3.0 + 1);
+        float x = 1.0 / (abs(i - loc) / 9.0 + 1);
         pixels.setPixelColor(i, color_mix(x));
       }
       pixels.show();
