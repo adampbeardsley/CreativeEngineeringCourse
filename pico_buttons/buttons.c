@@ -8,6 +8,14 @@
 #define LED1 14
 #define LED2 15
 
+void button_update(){
+
+    int state = gpio_get(BUTTON1);
+    gpio_put(LED1, !state);
+    state = gpio_get(BUTTON2);
+    gpio_put(LED2, !state);
+}
+
 int main() {
 
   stdio_init_all();
@@ -25,11 +33,12 @@ int main() {
   gpio_set_dir(LED1, GPIO_OUT);
   gpio_set_dir(LED2, GPIO_OUT);
 
+  gpio_set_irq_enabled_with_callback(BUTTON1, GPIO_IRQ_EDGE_FALL, true, &button_update);
+  gpio_set_irq_enabled_with_callback(BUTTON1, GPIO_IRQ_EDGE_RISE, true, &button_update);
+  gpio_set_irq_enabled_with_callback(BUTTON2, GPIO_IRQ_EDGE_FALL, true, &button_update);
+  gpio_set_irq_enabled_with_callback(BUTTON2, GPIO_IRQ_EDGE_RISE, true, &button_update);
+
   while (1) {
-    int state = gpio_get(BUTTON1);
-    gpio_put(LED1, !state);
-    state = gpio_get(BUTTON2);
-    gpio_put(LED2, !state);
 
     gpio_put(LED_PIN, 0);
     sleep_ms(250);
