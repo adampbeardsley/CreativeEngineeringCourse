@@ -1,13 +1,16 @@
 #include <stdio.h>
 #include "pico/stdlib.h"
 #include "hardware/gpio.h"
+#include "hardware/irq.h"
+#include "pico/stdlib.h"
+#include "pico/time.h"
 
 #define LED_PIN 25
 #define BUTTON1 12
 #define BUTTON2 13
 #define LED1 14
 #define LED2 15
-#define DEBOUNCE_TIME 250  // roughly number of clock cycles
+#define DEBOUNCE_TIME 50
 
 unsigned long time1 = to_ms_since_boot(get_absolute_time());
 unsigned long time2 = to_ms_since_boot(get_absolute_time());
