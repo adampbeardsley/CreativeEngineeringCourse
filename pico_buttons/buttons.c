@@ -26,6 +26,11 @@ int main() {
   gpio_set_dir(LED2, GPIO_OUT);
 
   while (1) {
+    int state = gpio_get(BUTTON1);
+    gpio_put(LED1, !state);
+    state = gpio_get(BUTTON2);
+    gpio_put(LED2, !state);
+
     gpio_put(LED_PIN, 0);
     sleep_ms(250);
     gpio_put(LED_PIN, 1);
