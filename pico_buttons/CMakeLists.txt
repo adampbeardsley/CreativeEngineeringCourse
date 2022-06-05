@@ -8,7 +8,7 @@ set(CMAKE_CXX_STANDARD 17)
 pico_sdk_init()
 
 add_executable(buttons
-  buttons.c
+  buttons.cpp
 )
 
 pico_enable_stdio_usb(buttons 1)
