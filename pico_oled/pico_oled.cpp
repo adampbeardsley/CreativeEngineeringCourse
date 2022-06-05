@@ -22,15 +22,16 @@ int main() {
   gpio_pull_up(I2C_SDA);
   gpio_pull_up(I2C_SCL);
 
-  sleep_ms(250);
-  SSD1306 display = SSD1306(i2c0, 0x3D, Size::W64xH48);
-
-  // for (int y = 0; y < 5; y++){
-  //   display.setPixel(0, y);
+  SSD1306 display = SSD1306(i2c0, 0x3C, Size::W128xH32);
+  // for (int y = 0; y < 16; y++){
+  //   display.setPixel(32, y);
   // }
-  drawText(&display, font_5x8, "TEST text", 0 ,20);
-
+  display.setOrientation(0);
+  drawText(&display, font_12x16, "00:00", 20, 10);
+  drawText(&display, font_5x8, "00:00", 100, 18);
+  drawText(&display, font_5x8, "ALARM", 100, 8);
   display.sendBuffer();
+
   while (1) {
     gpio_put(LED_PIN, 0);
     sleep_ms(250);
