@@ -2,7 +2,7 @@
 #include "pico/stdlib.h"
 #include "hardware/gpio.h"
 #include "../../pico-ssd1306/ssd1306.h"
-#include "../../pico-ssd1306/shapeRenderer/ShapeRenderer.h"
+#include "../../pico-ssd1306/textRenderer/TextRenderer.h"
 #include "hardware/i2c.h"
 
 #define LED_PIN 25
@@ -25,7 +25,11 @@ int main() {
   sleep_ms(250);
   SSD1306 display = SSD1306(i2c0, 0x3D, Size::W64xH48);
 
-  drawLine(&display, 0, 0 ,63, 31);
+  // for (int y = 0; y < 5; y++){
+  //   display.setPixel(0, y);
+  // }
+  drawText(&display, font_5x8, "TEST text", 0 ,20);
+
   display.sendBuffer();
   while (1) {
     gpio_put(LED_PIN, 0);
