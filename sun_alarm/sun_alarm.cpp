@@ -144,6 +144,17 @@ void update_alarm(SSD1306 display, int8_t hour, int8_t minute){
 	update_time(display, hour, minute, true);
 }
 
+void refresh_time(SSD1306 display){
+	datetime_t t;
+	char time_str[5];
+
+	rtc_get_datetime(&t);
+	sprintf(time_str, "%02d:%02d", t.hour, t.min);
+	fillRect(&display, TIMEX, TIMEY, TIMEX + 5 * 12, TIMEY + 16, WriteMode::SUBTRACT);
+	drawText(&display, font_12x16, time_str, TIMEX, TIMEY);
+	display.sendBuffer();
+}
+
 int main() {
 
 	stdio_init_all();
@@ -167,7 +178,6 @@ int main() {
 
 	update_time(display, 3, 14);
 	update_alarm(display, 3, 15);
-	update_alarm(display, 3, 16);
 
 	while (true) {
 		for (uint8_t j=0; j<255; j++){
@@ -179,6 +189,7 @@ int main() {
         alarm_fired = false;
       }
 			sleep_ms(100);
+			refresh_time(display);
 		}
 		for (uint8_t j=255; j>0; j--){
 			for (int i=0; i<NUM_PIXELS;i++) {
