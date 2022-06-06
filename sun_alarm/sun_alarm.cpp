@@ -1,3 +1,27 @@
+/*
+	Sun alarm - an alarm clock simulating sunrise.
+
+	This combines neopixels, buttons, the built-in RTC, and an OLED display.
+	Pinout (board pins, not GPIO pins):
+		Neopixel VCC: 40
+		Neopixel GND: any GND
+		Neopixel Data: 2
+		OLED VCC: 36
+		OLED GND: any GND
+		OLED SCL: 7
+		OLED SDA: 6
+		BUTTON1: 19
+		BUTTON2: 20
+
+	BUTTON1 loops through setting hour, minute, alarm hour, alarm minute.
+	BUTTON2 increments the digit you are on (shown with underline on OLED)
+
+	This code uses the SSD1306 library written by Harby:
+		https://github.com/Harbys/pico-ssd1306
+	I've also incorporated the WS2812b code here:
+		https://github.com/benevpi/Pico-Parallel-WS2812b
+*/
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
