@@ -3,12 +3,17 @@
 #include <string.h>
 
 #include "pico/stdlib.h"
+#include "hardware/gpio.h"
 #include "hardware/pio.h"
 #include "hardware/dma.h"
 #include "hardware/irq.h"
 #include "hardware/rtc.h"
 #include "pico_ws2811.pio.h"
 #include "pico/util/datetime.h"
+#include "../../pico-ssd1306/ssd1306.h"
+#include "../../pico-ssd1306/textRenderer/TextRenderer.h"
+#include "../../pico-ssd1306/shapeRenderer/ShapeRenderer.h"
+#include "hardware/i2c.h"
 
 #define LED_PIN 25
 
@@ -16,10 +21,17 @@
 #define RESET_TIME_US 400
 #define START_PIN 1
 
+#define I2C_SDA 4
+#define I2C_SCL 5
+#define TIMEX 20
+#define TIMEY 10
+
 int dma_chan;
 uint32_t pixels[NUM_PIXELS*24];
 
 static volatile bool alarm_fired = false;
+
+using namespace pico_ssd1306;
 
 void set_pixel_colour(int pixel, uint8_t r, uint8_t g, uint8_t b) {
 
@@ -81,6 +93,54 @@ static void alarm_isr(void){
 	alarm_fired = true;
 }
 
+SSD1306 setup_display(){
+	i2c_init(i2c0, 1000000);
+  gpio_set_function(I2C_SDA, GPIO_FUNC_I2C);
+  gpio_set_function(I2C_SCL, GPIO_FUNC_I2C);
+  gpio_pull_up(I2C_SDA);
+  gpio_pull_up(I2C_SCL);
+
+  SSD1306 display = SSD1306(i2c0, 0x3C, Size::W128xH32);
+  display.setOrientation(0);
+	return display;
+}
+
+void update_time(SSD1306 display, int8_t hour, int8_t minute){
+	char time_str[5];
+	sprintf(time_str, "%02d:%02d", hour, minute);
+	fillRect(&display, TIMEX, TIMEY, TIMEX + 5 * 12, TIMEY + 16, WriteMode::SUBTRACT);
+	drawText(&display, font_12x16, time_str, TIMEX, TIMEY);
+	datetime_t t = {
+					.year  = 2020,
+					.month = 06,
+					.day   = 05,
+					.dotw  = 5,
+					.hour  = hour,
+					.min   = minute,
+					.sec   = 00
+	};
+	rtc_set_datetime(&t);
+	display.sendBuffer();
+}
+
+void update_alarm(SSD1306 display, int8_t hour, int8_t minute){
+	char time_str[5];
+	sprintf(time_str, "%02d:%02d", hour, minute);
+	fillRect(&display, TIMEX, TIMEY, TIMEX + 5 * 12, TIMEY + 16, WriteMode::SUBTRACT);
+	drawText(&display, font_12x16, time_str, TIMEX, TIMEY);
+	datetime_t t = {
+					.year  = 2020,
+					.month = 06,
+					.day   = 05,
+					.dotw  = 5,
+					.hour  = hour,
+					.min   = minute,
+					.sec   = 00
+	};
+	rtc_set_datetime(&t);
+	display.sendBuffer();
+}
+
 int main() {
 
 	stdio_init_all();
@@ -90,15 +150,21 @@ int main() {
 	gpio_set_dir(LED_PIN, GPIO_OUT);
 	gpio_put(LED_PIN, 0);
 
+	SSD1306 display = setup_display();
+	drawText(&display, font_12x16, "00:00", TIMEX, TIMEY);
+  drawText(&display, font_5x8, "00:00", 100, 18);
+  drawText(&display, font_5x8, "ALARM", 100, 8);
+  display.sendBuffer();
+
 	char datetime_buf[256];
 	char *datetime_str = &datetime_buf[0];
 
 	// Start on Friday 5th of June 2020 15:45:00
 	datetime_t t = {
-					.year  = 2020,
-					.month = 06,
-					.day   = 05,
-					.dotw  = 5, // 0 is Sunday, so 5 is Friday
+					.year  = -1,
+					.month = -1,
+					.day   = -1,
+					.dotw  = -1, // 0 is Sunday, so 5 is Friday
 					.hour  = 15,
 					.min   = 45,
 					.sec   = 00
@@ -119,7 +185,8 @@ int main() {
 	};
 	rtc_set_alarm(&t0, &alarm_isr);
 
-	printf("hello\n");
+	update_time(display, 3, 14);
+
 	while (true) {
 		for (uint8_t j=0; j<255; j++){
 			for (int i=0; i<NUM_PIXELS;i++) {
