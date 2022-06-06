@@ -8,10 +8,10 @@
 		Neopixel Data: 2
 		OLED VCC: 36
 		OLED GND: any GND
-		OLED SCL: 7
-		OLED SDA: 6
-		BUTTON1: 19
-		BUTTON2: 20
+		OLED SCL: 17
+		OLED SDA: 16
+		BUTTON1: 7
+		BUTTON2: 24
 
 	BUTTON1 loops through setting hour, minute, alarm hour, alarm minute.
 	BUTTON2 increments the digit you are on (shown with underline on OLED)
@@ -46,15 +46,15 @@
 #define RESET_TIME_US 400
 #define START_PIN 1
 
-#define I2C_SDA 4
-#define I2C_SCL 5
+#define I2C_SDA 12
+#define I2C_SCL 13
 #define TIMEX 20
 #define TIMEY 10
 #define ALARMX 100
 #define ALARMY 18
 
-#define BUTTON1 14
-#define BUTTON2 15
+#define BUTTON1 5
+#define BUTTON2 18
 #define DEBOUNCE_TIME 50
 
 #define ALARM_TIME 60 // Time for lights to turn completely on, in seconds
