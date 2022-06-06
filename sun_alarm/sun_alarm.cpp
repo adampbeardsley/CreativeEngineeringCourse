@@ -33,6 +33,9 @@
 #define BUTTON2 15
 #define DEBOUNCE_TIME 50
 
+#define ALARM_TIME 60 // Time for lights to turn completely on, in seconds
+#define ALARM_BUFFER 20 // time for lights to stay completely on, in seconds
+
 int dma_chan;
 uint32_t pixels[NUM_PIXELS*24];
 
@@ -153,6 +156,7 @@ void update_time(SSD1306 display, int8_t hour, int8_t minute, bool set_alarm=fal
 		rtc_set_datetime(&time_dt);
 	}
 	display.sendBuffer();
+	alarm_fired = false;  // If changing time/alarm, old alarm is no good.
 }
 
 void update_alarm(SSD1306 display, int8_t hour, int8_t minute){
@@ -288,10 +292,22 @@ int main() {
 				break;
 		}
 		if (alarm_fired){
-      printf("ALARM!\n");
-      alarm_fired = false;
-			for (int i=0; i<NUM_PIXELS;i++) {
-				set_pixel_colour(i,255,0,0);
+			rtc_get_datetime(&time_dt);
+			float seconds_since_alarm = 3600 * (time_dt.hour - alarm_dt.hour) + 60 * (time_dt.min - alarm_dt.min) + (time_dt.sec - alarm_dt.sec);
+			if (seconds_since_alarm > (ALARM_TIME + ALARM_BUFFER)) {
+				alarm_fired = false;
+				for (int i=0; i<NUM_PIXELS;i++) {
+					set_pixel_colour(i,0,0,0);
+				}
+			} else if (seconds_since_alarm > ALARM_TIME){
+				for (int i=0; i<NUM_PIXELS;i++) {
+					set_pixel_colour(i, 255, 255, 255);
+				}
+			} else {
+				int bright = seconds_since_alarm / ALARM_TIME * 255;
+				for (int i=0; i<NUM_PIXELS;i++) {
+					set_pixel_colour(i, bright, bright, bright);
+				}
 			}
     }
 		refresh_time(display);
