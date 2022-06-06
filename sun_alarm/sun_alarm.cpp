@@ -25,6 +25,8 @@
 #define I2C_SCL 5
 #define TIMEX 20
 #define TIMEY 10
+#define ALARMX 100
+#define ALARMY 18
 
 int dma_chan;
 uint32_t pixels[NUM_PIXELS*24];
@@ -105,40 +107,41 @@ SSD1306 setup_display(){
 	return display;
 }
 
-void update_time(SSD1306 display, int8_t hour, int8_t minute){
+void update_time(SSD1306 display, int8_t hour, int8_t minute, bool set_alarm=false){
 	char time_str[5];
 	sprintf(time_str, "%02d:%02d", hour, minute);
-	fillRect(&display, TIMEX, TIMEY, TIMEX + 5 * 12, TIMEY + 16, WriteMode::SUBTRACT);
-	drawText(&display, font_12x16, time_str, TIMEX, TIMEY);
-	datetime_t t = {
-					.year  = 2020,
-					.month = 06,
-					.day   = 05,
-					.dotw  = 5,
-					.hour  = hour,
-					.min   = minute,
-					.sec   = 00
-	};
-	rtc_set_datetime(&t);
+	if (set_alarm){
+		datetime_t t = {
+						.year  = -1,
+						.month = -1,
+						.day   = -1,
+						.dotw  = -1,
+						.hour  = hour,
+						.min   = minute,
+						.sec   = 00
+		};
+		fillRect(&display, ALARMX, ALARMY, ALARMX + 5 * 5, ALARMY + 8, WriteMode::SUBTRACT);
+		drawText(&display, font_5x8, time_str, ALARMX, ALARMY);
+		rtc_set_alarm(&t, &alarm_isr);
+	} else {
+		datetime_t t = {
+						.year  = 2022,
+						.month = 6,
+						.day   = 6,
+						.dotw  = 1,
+						.hour  = hour,
+						.min   = minute,
+						.sec   = 00
+		};
+		fillRect(&display, TIMEX, TIMEY, TIMEX + 5 * 12, TIMEY + 16, WriteMode::SUBTRACT);
+		drawText(&display, font_12x16, time_str, TIMEX, TIMEY);
+		rtc_set_datetime(&t);
+	}
 	display.sendBuffer();
 }
 
 void update_alarm(SSD1306 display, int8_t hour, int8_t minute){
-	char time_str[5];
-	sprintf(time_str, "%02d:%02d", hour, minute);
-	fillRect(&display, TIMEX, TIMEY, TIMEX + 5 * 12, TIMEY + 16, WriteMode::SUBTRACT);
-	drawText(&display, font_12x16, time_str, TIMEX, TIMEY);
-	datetime_t t = {
-					.year  = 2020,
-					.month = 06,
-					.day   = 05,
-					.dotw  = 5,
-					.hour  = hour,
-					.min   = minute,
-					.sec   = 00
-	};
-	rtc_set_datetime(&t);
-	display.sendBuffer();
+	update_time(display, hour, minute, true);
 }
 
 int main() {
@@ -158,34 +161,13 @@ int main() {
 
 	char datetime_buf[256];
 	char *datetime_str = &datetime_buf[0];
+	datetime_t t;
 
-	// Start on Friday 5th of June 2020 15:45:00
-	datetime_t t = {
-					.year  = -1,
-					.month = -1,
-					.day   = -1,
-					.dotw  = -1, // 0 is Sunday, so 5 is Friday
-					.hour  = 15,
-					.min   = 45,
-					.sec   = 00
-	};
-
-	// Start the RTC
 	rtc_init();
-	rtc_set_datetime(&t);
-
-	datetime_t t0 = {
-					.year  = -1,
-					.month = -1,
-					.day   = -1,
-					.dotw  = -1, // 0 is Sunday, so 5 is Friday
-					.hour  = 15,
-					.min   = 45,
-					.sec   = 10
-	};
-	rtc_set_alarm(&t0, &alarm_isr);
 
 	update_time(display, 3, 14);
+	update_alarm(display, 3, 15);
+	update_alarm(display, 3, 16);
 
 	while (true) {
 		for (uint8_t j=0; j<255; j++){
@@ -194,9 +176,6 @@ int main() {
 				}
 			if (alarm_fired){
         printf("ALARM!\n");
-        gpio_put(LED_PIN, 1);
-        sleep_ms(500);
-        gpio_put(LED_PIN, 0);
         alarm_fired = false;
       }
 			sleep_ms(100);
