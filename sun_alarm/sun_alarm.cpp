@@ -18,16 +18,16 @@ int dma_chan;
 uint32_t pixels[NUM_PIXELS*24];
 
 //note  -- this sets the order as RGB. May need to change.
-void set_pixel_colour(int pixel, int channel, uint8_t r, uint8_t g, uint8_t b) {
+void set_pixel_colour(int pixel, uint8_t r, uint8_t g, uint8_t b) {
 
 	uint32_t colour_value = (r << 16 | g << 8 | b);
 
 	for(int i=0; i<24;i++) {
 		if (colour_value & (1u<<i)) {
-			pixels[((pixel + 1)*24) - i - 1] |= 1u << (channel);
+			pixels[((pixel + 1)*24) - i - 1] |= 1u;
 		}
 		else {
-			pixels[((pixel + 1)*24) - i - 1] &= ~(1u<<channel);
+			pixels[((pixel + 1)*24) - i - 1] &= ~(1u);
 		}
 	}
 }
@@ -46,13 +46,11 @@ void dma_handler() {
 	add_alarm_in_us(RESET_TIME_US, dma_start, NULL, false);
 }
 
-//this should just need changing over to the parallel PIO program
-//need to init the values first.
-int main() {
-  PIO pio = pio0;
-  int sm = 0;
+void init_ws2811(){
+	PIO pio = pio0;
+	int sm = 0;
 
-  uint offset = pio_add_program(pio, &ws2811_program);
+	uint offset = pio_add_program(pio, &ws2811_program);
 
   ws2811_program_init(pio, sm, offset, START_PIN, 800000);
 
@@ -82,17 +80,22 @@ int main() {
 
 	//kick off the initial transfer
 	dma_handler();
+}
+
+int main() {
+
+	init_ws2811();
 
 	while (true) {
 		for (uint8_t j=0; j<255; j++){
 			for (int i=0; i<NUM_PIXELS;i++) {
-					set_pixel_colour(i,0,j,0,0);
+					set_pixel_colour(i,j,0,0);
 				}
 			sleep_ms(100);
 		}
 		for (uint8_t j=255; j>0; j--){
 			for (int i=0; i<NUM_PIXELS;i++) {
-					set_pixel_colour(i,0,j,0,0);
+					set_pixel_colour(i,j,0,0);
 				}
 			sleep_ms(100);
 		}
