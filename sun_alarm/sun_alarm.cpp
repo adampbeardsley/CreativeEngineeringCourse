@@ -14,6 +14,7 @@
 #include "../../pico-ssd1306/textRenderer/TextRenderer.h"
 #include "../../pico-ssd1306/shapeRenderer/ShapeRenderer.h"
 #include "hardware/i2c.h"
+#include "pico/time.h"
 
 #define LED_PIN 25
 
@@ -28,12 +29,40 @@
 #define ALARMX 100
 #define ALARMY 18
 
+#define BUTTON1 14
+#define BUTTON2 15
+#define DEBOUNCE_TIME 50
+
 int dma_chan;
 uint32_t pixels[NUM_PIXELS*24];
 
 static volatile bool alarm_fired = false;
 
 using namespace pico_ssd1306;
+
+unsigned long time1 = to_ms_since_boot(get_absolute_time());
+unsigned long time2 = to_ms_since_boot(get_absolute_time());
+bool pressed1 = false;
+bool pressed2 = false;
+uint8_t timeset_state = 0;
+datetime_t alarm_dt = {
+				.year  = -1,
+				.month = -1,
+				.day   = -1,
+				.dotw  = -1,
+				.hour  = 0,
+				.min   = 0,
+				.sec   = 00
+};
+datetime_t time_dt = {
+				.year  = 2022,
+				.month = 6,
+				.day   = 6,
+				.dotw  = 1,
+				.hour  = 0,
+				.min   = 0,
+				.sec   = 00
+};
 
 void set_pixel_colour(int pixel, uint8_t r, uint8_t g, uint8_t b) {
 
@@ -111,31 +140,17 @@ void update_time(SSD1306 display, int8_t hour, int8_t minute, bool set_alarm=fal
 	char time_str[5];
 	sprintf(time_str, "%02d:%02d", hour, minute);
 	if (set_alarm){
-		datetime_t t = {
-						.year  = -1,
-						.month = -1,
-						.day   = -1,
-						.dotw  = -1,
-						.hour  = hour,
-						.min   = minute,
-						.sec   = 00
-		};
+		alarm_dt.hour = hour;
+		alarm_dt.min = minute;
 		fillRect(&display, ALARMX, ALARMY, ALARMX + 5 * 5, ALARMY + 8, WriteMode::SUBTRACT);
 		drawText(&display, font_5x8, time_str, ALARMX, ALARMY);
-		rtc_set_alarm(&t, &alarm_isr);
+		rtc_set_alarm(&alarm_dt, &alarm_isr);
 	} else {
-		datetime_t t = {
-						.year  = 2022,
-						.month = 6,
-						.day   = 6,
-						.dotw  = 1,
-						.hour  = hour,
-						.min   = minute,
-						.sec   = 00
-		};
+		time_dt.hour = hour;
+		time_dt.min = minute;
 		fillRect(&display, TIMEX, TIMEY, TIMEX + 5 * 12, TIMEY + 16, WriteMode::SUBTRACT);
 		drawText(&display, font_12x16, time_str, TIMEX, TIMEY);
-		rtc_set_datetime(&t);
+		rtc_set_datetime(&time_dt);
 	}
 	display.sendBuffer();
 }
@@ -145,14 +160,25 @@ void update_alarm(SSD1306 display, int8_t hour, int8_t minute){
 }
 
 void refresh_time(SSD1306 display){
-	datetime_t t;
 	char time_str[5];
 
-	rtc_get_datetime(&t);
-	sprintf(time_str, "%02d:%02d", t.hour, t.min);
+	rtc_get_datetime(&time_dt);
+	sprintf(time_str, "%02d:%02d", time_dt.hour, time_dt.min);
 	fillRect(&display, TIMEX, TIMEY, TIMEX + 5 * 12, TIMEY + 16, WriteMode::SUBTRACT);
 	drawText(&display, font_12x16, time_str, TIMEX, TIMEY);
 	display.sendBuffer();
+}
+
+void button_update(uint gpio, uint32_t events) {
+  if (gpio == BUTTON1){
+    if ((to_ms_since_boot(get_absolute_time()) - time1) > DEBOUNCE_TIME) {
+      pressed1 = true;
+    }
+  } else {
+    if ((to_ms_since_boot(get_absolute_time()) - time2) > DEBOUNCE_TIME) {
+      pressed2 = true;
+    }
+  }
 }
 
 int main() {
@@ -170,32 +196,105 @@ int main() {
   drawText(&display, font_5x8, "ALARM", 100, 8);
   display.sendBuffer();
 
-	char datetime_buf[256];
-	char *datetime_str = &datetime_buf[0];
-	datetime_t t;
-
 	rtc_init();
 
 	update_time(display, 3, 14);
 	update_alarm(display, 3, 15);
 
+	gpio_init(BUTTON1);
+  gpio_init(BUTTON2);
+  gpio_set_dir(BUTTON1, GPIO_IN);
+  gpio_pull_up(BUTTON1);
+  gpio_set_dir(BUTTON2, GPIO_IN);
+  gpio_pull_up(BUTTON2);
+
+  gpio_set_irq_enabled_with_callback(BUTTON1, GPIO_IRQ_EDGE_FALL, true, &button_update);
+  gpio_set_irq_enabled_with_callback(BUTTON2, GPIO_IRQ_EDGE_FALL, true, &button_update);
+
 	while (true) {
-		for (uint8_t j=0; j<255; j++){
-			for (int i=0; i<NUM_PIXELS;i++) {
-					set_pixel_colour(i,j,0,0);
+
+		// State machine for button presses
+		switch (timeset_state) {
+			case 0:
+				// Not setting time or alarm, but check for button press
+				if (pressed1){
+					// Move to next mode
+					timeset_state = 1;
+					fillRect(&display, TIMEX, TIMEY + 18, TIMEX + 2 * 12, TIMEY + 19);
+					pressed1 = false;
 				}
-			if (alarm_fired){
-        printf("ALARM!\n");
-        alarm_fired = false;
-      }
-			sleep_ms(100);
-			refresh_time(display);
-		}
-		for (uint8_t j=255; j>0; j--){
-			for (int i=0; i<NUM_PIXELS;i++) {
-					set_pixel_colour(i,j,0,0);
+				pressed2 = false;
+				break;
+			case 1:
+				// Setting the hour
+				if (pressed2){
+					rtc_get_datetime(&time_dt);
+					time_dt.hour = (time_dt.hour + 1) % 24;
+					rtc_set_datetime(&time_dt);
+					// Let's see if the cycle refresh is fast enough
+					pressed2 = false;
 				}
-			sleep_ms(100);
+				if (pressed1){
+					// Move to next mode
+					timeset_state = 2;
+					fillRect(&display, TIMEX, TIMEY + 18, TIMEX + 2 * 12, TIMEY + 19, WriteMode::SUBTRACT);
+					fillRect(&display, TIMEX + 3 * 12, TIMEY + 18, TIMEX + 5 * 12, TIMEY + 19);
+					pressed1 = false;
+				}
+				break;
+			case 2:
+				// Setting the minute
+				if (pressed2){
+					rtc_get_datetime(&time_dt);
+					time_dt.min = (time_dt.min + 1) % 60;
+					rtc_set_datetime(&time_dt);
+					// Let's see if the cycle refresh is fast enough
+					pressed2 = false;
+				}
+				if (pressed1){
+					// Move to next mode
+					timeset_state = 3;
+					fillRect(&display, TIMEX + 3 * 12, TIMEY + 18, TIMEX + 5 * 12, TIMEY + 19, WriteMode::SUBTRACT);
+					fillRect(&display, ALARMX, TIMEY + 18, ALARMX + 2 * 5, TIMEY + 19);
+					pressed1 = false;
+				}
+				break;
+			case 3:
+				// Setting the alarm hour
+				if (pressed2){
+					update_alarm(display, (alarm_dt.hour + 1) % 24, alarm_dt.min);
+					pressed2 = false;
+				}
+				if (pressed1){
+					// Move to next mode
+					timeset_state = 4;
+					fillRect(&display, ALARMX, TIMEY + 18, ALARMX + 3 * 5, TIMEY + 19, WriteMode::SUBTRACT);
+					fillRect(&display, ALARMX + 3 * 5, TIMEY + 18, ALARMX + 5 * 5, TIMEY + 19);
+					pressed1 = false;
+				}
+				break;
+			case 4:
+				// Setting the alarm minute
+				if (pressed2){
+					update_alarm(display, alarm_dt.hour, (alarm_dt.min + 1) % 60);
+					pressed2 = false;
+				}
+				if (pressed1){
+					// Move to next mode
+					timeset_state = 0;
+					fillRect(&display, ALARMX + 3 * 5, TIMEY + 18, ALARMX + 5 * 5, TIMEY + 19, WriteMode::SUBTRACT);
+					pressed1 = false;
+				}
+				break;
 		}
+		if (alarm_fired){
+      printf("ALARM!\n");
+      alarm_fired = false;
+			for (int i=0; i<NUM_PIXELS;i++) {
+				set_pixel_colour(i,255,0,0);
+			}
+    }
+		refresh_time(display);
+		sleep_ms(100);
   }
 }
