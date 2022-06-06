@@ -13,6 +13,14 @@ pico_generate_pio_header(sun_alarm ${CMAKE_CURRENT_LIST_DIR}/pico_ws2811.pio)
 
 target_sources(sun_alarm PRIVATE sun_alarm.cpp)
 
-target_link_libraries(sun_alarm PRIVATE pico_stdlib hardware_pio hardware_dma hardware_irq)
+pico_enable_stdio_usb(sun_alarm 1)
+pico_enable_stdio_uart(sun_alarm 1)
+
+target_link_libraries(sun_alarm PRIVATE
+  pico_stdlib
+  hardware_pio
+  hardware_dma
+  hardware_irq
+  hardware_rtc)
 
 pico_add_extra_outputs(sun_alarm)
