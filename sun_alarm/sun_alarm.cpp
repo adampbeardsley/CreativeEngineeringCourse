@@ -200,10 +200,12 @@ void refresh_time(SSD1306 display){
 void button_update(uint gpio, uint32_t events) {
   if (gpio == BUTTON1){
     if ((to_ms_since_boot(get_absolute_time()) - time1) > DEBOUNCE_TIME) {
+			time1 = to_ms_since_boot(get_absolute_time());
       pressed1 = true;
     }
   } else {
     if ((to_ms_since_boot(get_absolute_time()) - time2) > DEBOUNCE_TIME) {
+			time2 = to_ms_since_boot(get_absolute_time());
       pressed2 = true;
     }
   }
