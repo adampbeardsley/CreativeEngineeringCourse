@@ -67,6 +67,10 @@ static volatile bool alarm_fired = false;
 
 using namespace pico_ssd1306;
 
+const int rfit[4] = {352, -261, 130, 34};
+const int gfit[4] = {1803, -2704, 1343, -187};
+const int bfit[4] = {2187, -3205, 1471, -198};
+
 unsigned long time1 = to_ms_since_boot(get_absolute_time());
 unsigned long time2 = to_ms_since_boot(get_absolute_time());
 bool pressed1 = false;
@@ -330,9 +334,15 @@ int main() {
 					set_pixel_colour(i, 255, 255, 255);
 				}
 			} else {
-				int bright = seconds_since_alarm / ALARM_TIME * 255;
+				float x = seconds_since_alarm / ALARM_TIME;
+				// These mysterious functions were made up to go through a progression
+				// of red/orange -> purple/pink -> orange/yellow -> white
+				uint8_t r = rfit[0] * x * x * x * x + rfit[1] * x * x * x + rfit[2] * x * x + rfit[3] * x;
+				uint8_t g = gfit[0] * x * x * x * x + gfit[1] * x * x * x + gfit[2] * x * x + gfit[3] * x;
+				uint8_t b = bfit[0] * x * x * x * x + bfit[1] * x * x * x + bfit[2] * x * x + bfit[3] * x;
+				printf("%d %d %d\n", r, g, b);
 				for (int i=0; i<NUM_PIXELS;i++) {
-					set_pixel_colour(i, bright, bright, bright);
+					set_pixel_colour(i, r, g, b);
 				}
 			}
     }
