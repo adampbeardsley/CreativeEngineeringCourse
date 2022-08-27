@@ -105,7 +105,7 @@ void loop() {
       if (pick_new){
         for (int i=0; i<3; i++){
           amp[i] = random(25 * NPIX_USE, 50 * NPIX_USE) / 200.0;
-          freq[i] = float(random(TWO_PI, 5 * TWO_PI)) / 100000.0;
+          freq[i] = float(random(5 * TWO_PI, 10 * TWO_PI)) / 100000.0;
           phase[i] = random(0, 100 * TWO_PI) / 100.0;
         }
 //        amp0 = NPIX_USE / 2.0;
