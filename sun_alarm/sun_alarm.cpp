@@ -57,8 +57,8 @@
 #define BUTTON2 18
 #define DEBOUNCE_TIME 50
 
-#define ALARM_TIME 60 // Time for lights to turn completely on, in seconds
-#define ALARM_BUFFER 20 // time for lights to stay completely on, in seconds
+#define ALARM_TIME 1200 // Time for lights to turn completely on, in seconds
+#define ALARM_BUFFER 300 // time for lights to stay completely on, in seconds
 
 int dma_chan;
 uint32_t pixels[NUM_PIXELS*24];
