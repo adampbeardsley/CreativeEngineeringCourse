@@ -6,8 +6,8 @@
 #define LED1 6
 #define LED2 7
 #define LEDS 9  // LEDs on pin 9
-#define NUMPIXELS 50
-#define NPIX_USE 35  // number of pixels to light up
+#define NUMPIXELS 100
+#define NPIX_USE 79  // number of pixels to light up
 #define BUTTON1 2  // color button
 #define BUTTON2 3  // pattern button
 #define DEBOUNCE_TIME 5
@@ -26,8 +26,8 @@ float phase[3];
 int colors[NCOLOR_MODES][3][3] = {
   {{255, 255, 255}, {255, 255, 255}, {255, 255, 255}}, // White
   {{255, 0, 0}, {0, 255, 0}, {255, 0, 0}}, // Green/Red
-  {{255, 255, 0}, {255, 100, 0}, {100, 0, 255}}, // J's Northern lights
-  {{255, 255, 0}, {255, 125, 0}, {0, 255, 255}} // A's Northern lights
+  {{255, 255, 0}, {100, 255, 0}, {0, 100, 255}}, // J's Northern lights
+  {{255, 255, 0}, {125, 255, 0}, {255, 0, 255}} // A's Northern lights
 };
 
 uint8_t debouncePress(int button){
