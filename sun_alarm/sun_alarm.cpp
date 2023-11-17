@@ -42,7 +42,7 @@
 
 #define LED_PIN 25
 
-#define NUM_PIXELS 15
+#define NUM_PIXELS 35
 #define RESET_TIME_US 400
 #define START_PIN 1
 
