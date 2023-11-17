@@ -2,9 +2,6 @@
 // See pinout at https://docs.arduino.cc/hardware/micro
 #include <Adafruit_NeoPixel.h>
 
-#define LED0 5
-#define LED1 6
-#define LED2 7
 #define LEDS 9  // LEDs on pin 9
 #define NUMPIXELS 100
 #define NPIX_USE 79  // number of pixels to light up
@@ -68,20 +65,12 @@ uint32_t color_mix(float x){
 
 void setup() {
   // Pin directions
-  pinMode(LED0, OUTPUT);
-  pinMode(LED1, OUTPUT);
-  pinMode(LED2, OUTPUT);
   pinMode(BUTTON1, INPUT_PULLUP); // Use pullup - less wiring
   pinMode(BUTTON2, INPUT_PULLUP);
 
   // Set up interrupts
   attachInterrupt(digitalPinToInterrupt(BUTTON1), color_interrupt, FALLING);
   attachInterrupt(digitalPinToInterrupt(BUTTON2), pattern_interrupt, FALLING);
-
-  // Initialize the lights. Otherwise they start in random state
-  digitalWrite(LED0, HIGH);
-  digitalWrite(LED1, HIGH);
-  digitalWrite(LED2, HIGH);
 
   pixels.begin();
   randomSeed(analogRead(0));
