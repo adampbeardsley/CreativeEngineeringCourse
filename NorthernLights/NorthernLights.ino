@@ -11,13 +11,13 @@
 #define BUTTON1 2  // color button
 #define BUTTON2 3  // pattern button
 #define DEBOUNCE_TIME 5
-#define NCOLOR_MODES 4
+#define NCOLOR_MODES 5
 #define NPATTERNS 2
 #define FADE_PERIOD 5000  // ms for fading cycle
 
 Adafruit_NeoPixel pixels(NUMPIXELS, LEDS, NEO_GRB + NEO_KHZ800);
 
-uint8_t color_mode = 2;  // White, RG, N. Lights
+uint8_t color_mode = 4;  // White, RG, N. Lights
 uint8_t pattern = 1;  // Solid, Fading, (Music)
 uint8_t pick_new = 1;  // pick new freq, etc for pattern
 float amp[3];
@@ -27,7 +27,8 @@ int colors[NCOLOR_MODES][3][3] = {
   {{255, 255, 255}, {255, 255, 255}, {255, 255, 255}}, // White
   {{255, 0, 0}, {0, 255, 0}, {255, 0, 0}}, // Green/Red
   {{255, 255, 0}, {100, 255, 0}, {0, 100, 255}}, // J's Northern lights
-  {{255, 255, 0}, {125, 255, 0}, {255, 0, 255}} // A's Northern lights
+  {{255, 255, 0}, {255, 170, 0}, {255, 0, 255}}, // Autumn with purple
+  {{255, 255, 0}, {255, 170, 0}, {255, 0, 0}} // Autumn with red
 };
 
 uint8_t debouncePress(int button){
@@ -108,9 +109,6 @@ void loop() {
           freq[i] = float(random(5 * TWO_PI, 10 * TWO_PI)) / 100000.0;
           phase[i] = random(0, 100 * TWO_PI) / 100.0;
         }
-//        amp0 = NPIX_USE / 2.0;
-//        freq0 = PI / 4000.0;
-//        phase0 = 0;
         pick_new = 0;
       }
       float loc = NPIX_USE / 2;
@@ -119,7 +117,7 @@ void loop() {
         loc += amp[i] * sin(freq[i] * myTime + phase[i]);
       }
       for (int i=0; i<NPIX_USE; i++){
-        float x = 1.0 / (abs(i - loc) / 9.0 + 1);
+        float x = 1.0 / (abs(i - loc) / 25.0 + 1);
         pixels.setPixelColor(i, color_mix(x));
       }
       pixels.show();
