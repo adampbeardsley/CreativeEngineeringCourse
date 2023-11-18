@@ -15,16 +15,14 @@ Adafruit_NeoPixel pixels(NUMPIXELS, LEDS, NEO_GRB + NEO_KHZ800);
 
 uint8_t color_mode = 4;  // White, RG, N. Lights
 uint8_t pattern = 1;  // Solid, Fading, (Music)
-uint8_t pick_new = 1;  // pick new freq, etc for pattern
-float amp[3];
-float freq[3];
-float phase[3];
+float freq[4] = {.05, -.065, .065 * PI, -0.05*PI};  // Used jupyter to find decent values
+float wlengths[4] = {1.3, 1.7, 1.3, 1.7};  // Used jupyter to find decent values
 int colors[NCOLOR_MODES][3][3] = {
   {{255, 255, 255}, {255, 255, 255}, {255, 255, 255}}, // White
   {{255, 0, 0}, {0, 255, 0}, {255, 0, 0}}, // Green/Red
   {{255, 255, 0}, {100, 255, 0}, {0, 100, 255}}, // J's Northern lights
   {{255, 255, 0}, {255, 170, 0}, {255, 0, 255}}, // Autumn with purple
-  {{255, 255, 0}, {255, 170, 0}, {255, 0, 0}} // Autumn with red
+  {{255, 170, 0}, {255, 110, 0}, {255, 0, 0}} // Autumn with red
 };
 
 uint8_t debouncePress(int button){
@@ -73,6 +71,8 @@ void setup() {
 
   pixels.begin();
   randomSeed(analogRead(0));
+
+  Serial.begin(9600);
 }
 
 void loop() {
@@ -91,21 +91,16 @@ void loop() {
       break;
     case 1:
       // Fade between colors
-      if (pick_new){
-        for (int i=0; i<3; i++){
-          amp[i] = random(25 * NPIX_USE, 50 * NPIX_USE) / 200.0;
-          freq[i] = float(random(5 * TWO_PI, 10 * TWO_PI)) / 100000.0;
-          phase[i] = random(0, 100 * TWO_PI) / 100.0;
-        }
-        pick_new = 0;
-      }
-      float loc = NPIX_USE / 2;
-      unsigned long myTime = millis();
-      for (int i=0; i<3; i++){
-        loc += amp[i] * sin(freq[i] * myTime + phase[i]);
-      }
+      float myTime = millis() / 1000.0;
+      
       for (int i=0; i<NPIX_USE; i++){
-        float x = 1.0 / (abs(i - loc) / 25.0 + 1);
+        float pos = i / 79.0;
+        float x = sin(2 * PI * (pos / wlengths[0] - myTime * freq[0]));
+        x += sin(2 * PI * (pos / wlengths[1] - myTime * freq[1]));
+        x += sin(2 * PI * (pos / wlengths[2] - myTime * freq[2]));
+        x += sin(2 * PI * (pos / wlengths[3] - myTime * freq[3]));
+        x = constrain(x / 3, -1, 1);
+        
         pixels.setPixelColor(i, color_mix(x));
       }
       pixels.show();
