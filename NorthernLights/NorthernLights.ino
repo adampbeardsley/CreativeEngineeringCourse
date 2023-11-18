@@ -10,7 +10,6 @@
 #define DEBOUNCE_TIME 5
 #define NCOLOR_MODES 5
 #define NPATTERNS 2
-#define FADE_PERIOD 5000  // ms for fading cycle
 
 Adafruit_NeoPixel pixels(NUMPIXELS, LEDS, NEO_GRB + NEO_KHZ800);
 
