@@ -13,17 +13,19 @@
 
 Adafruit_NeoPixel pixels(NUMPIXELS, LEDS, NEO_GRB + NEO_KHZ800);
 
-uint8_t color_mode = 4;  // White, RG, N. Lights
-uint8_t pattern = 1;  // Solid, Fading, (Music)
+uint8_t color_mode = 0;  // See colors array below
+uint8_t pattern = 2;  // Solid, Fading, (Music)
 float freq[4] = {.05, -.065, .065 * PI, -0.05*PI};  // Used jupyter to find decent values
 float wlengths[4] = {1.3, 1.7, 1.3, 1.7};  // Used jupyter to find decent values
 int colors[NCOLOR_MODES][3][3] = {
-  {{255, 255, 255}, {255, 255, 255}, {255, 255, 255}}, // White
+  {{255, 150, 25}, {255, 255, 255}, {0, 0, 0}}, // White
   {{255, 0, 0}, {0, 255, 0}, {255, 0, 0}}, // Green/Red
   {{255, 255, 0}, {100, 255, 0}, {0, 100, 255}}, // J's Northern lights
   {{255, 255, 0}, {255, 170, 0}, {255, 0, 255}}, // Autumn with purple
   {{255, 170, 0}, {255, 110, 0}, {255, 0, 0}} // Autumn with red
 };
+const float OMEGA = 2 * PI / 3;  // ang freq for twinkling
+float phi[NPIX_USE];
 
 uint8_t debouncePress(int button){
   if (!digitalRead(button)) {
@@ -60,6 +62,15 @@ uint32_t color_mix(float x){
   return pixels.Color(val[0], val[1], val[2]);
 }
 
+uint32_t color_fade(float x){
+  // linear interpolate from one color to the next
+  float val[3];
+  for (int i=0; i<3; i++){
+    val[i] = colors[color_mode][0][i] + x * (colors[color_mode][2][i] - colors[color_mode][0][i]);
+  }
+  return pixels.Color(val[0], val[1], val[2]);
+}
+
 void setup() {
   // Pin directions
   pinMode(BUTTON1, INPUT_PULLUP); // Use pullup - less wiring
@@ -71,12 +82,18 @@ void setup() {
 
   pixels.begin();
   randomSeed(analogRead(0));
-
   Serial.begin(9600);
+
+  for (int i=0; i<NPIX_USE; i++){
+    phi[i] = (float)rand()/(float)(RAND_MAX/(2 * PI));
+  }
+
+
 }
 
 void loop() {
-  // put your main code here, to run repeatedly:
+  float x;
+  float myTime = millis() / 1000.0;
   switch (pattern) {
     case 0:
       // Solid color, every other light
@@ -90,12 +107,10 @@ void loop() {
       }
       break;
     case 1:
-      // Fade between colors
-      float myTime = millis() / 1000.0;
-      
+      // Wavy fade between colors
       for (int i=0; i<NPIX_USE; i++){
         float pos = i / 79.0;
-        float x = sin(2 * PI * (pos / wlengths[0] - myTime * freq[0]));
+        x = sin(2 * PI * (pos / wlengths[0] - myTime * freq[0]));
         x += sin(2 * PI * (pos / wlengths[1] - myTime * freq[1]));
         x += sin(2 * PI * (pos / wlengths[2] - myTime * freq[2]));
         x += sin(2 * PI * (pos / wlengths[3] - myTime * freq[3]));
@@ -104,6 +119,13 @@ void loop() {
         pixels.setPixelColor(i, color_mix(x));
       }
       pixels.show();
-        
+      break;
+    case 2:
+      // Twinkle
+      for (int i=0; i<NPIX_USE; i++){
+        x = constrain(sin(OMEGA * myTime + phi[i]), 0, 1);
+        pixels.setPixelColor(i, color_fade(x));
+      }
+      pixels.show();
   }
 }
