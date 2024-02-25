@@ -18,7 +18,7 @@ uint8_t pattern = 2;  // Solid, Fading, (Music)
 float freq[4] = {.05, -.065, .065 * PI, -0.05*PI};  // Used jupyter to find decent values
 float wlengths[4] = {1.3, 1.7, 1.3, 1.7};  // Used jupyter to find decent values
 int colors[NCOLOR_MODES][3][3] = {
-  {{255, 150, 25}, {255, 255, 255}, {0, 0, 0}}, // White
+  {{255, 140, 18}, {255, 255, 255}, {0, 0, 0}}, // White
   {{255, 0, 0}, {0, 255, 0}, {255, 0, 0}}, // Green/Red
   {{255, 255, 0}, {100, 255, 0}, {0, 100, 255}}, // J's Northern lights
   {{255, 255, 0}, {255, 170, 0}, {255, 0, 255}}, // Autumn with purple
